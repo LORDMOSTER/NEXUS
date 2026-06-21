@@ -1,0 +1,206 @@
+/* ============================================================
+   DASHBOARD LAYOUT — Sidebar + Main
+   ============================================================ */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-dominant);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── SIDEBAR ──────────────────────────────────────────────── */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background-color: var(--bg-dominant);
+  border-right: 1px solid var(--border-subtle);
+  z-index: 10;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .sidebar {
+  background: rgba(10, 10, 11, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+}
+
+/* Logo */
+.sidebar-logo {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  letter-spacing: -0.03em;
+}
+
+/* Nav Buttons */
+.sidebar-btn {
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  padding: 10px 16px;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  outline: none;
+  margin-bottom: 2px;
+}
+
+.sidebar-btn:hover {
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
+
+.sidebar-btn.active-nav-btn {
+  background: var(--accent-glow);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.sidebar-btn.logout-btn {
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.sidebar-btn.logout-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ─── MAIN CONTENT ─────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 32px 40px 32px;
+  overflow-x: hidden;
+}
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 0 28px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.welcome-text {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+/* ─── THEME TOGGLE ──────────────────────────────────────────── */
+.theme-toggle-dash {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.theme-toggle-dash:hover {
+  color: var(--accent-blue);
+  border-color: rgba(0, 102, 255, 0.3);
+  background: var(--accent-glow);
+}
+
+.theme-toggle-dash.active {
+  color: var(--accent-blue);
+  background: var(--accent-glow);
+  border-color: rgba(0, 102, 255, 0.3);
+}
+
+/* ─── BENTO GRID ─────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+/* Unit Badge */
+.unit-badge {
+  background: var(--accent-glow);
+  color: var(--accent-blue);
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  display: inline-block;
+  letter-spacing: 0.01em;
+}
+
+.dark .unit-badge {
+  background: rgba(0, 102, 255, 0.12);
+  border-color: rgba(0, 102, 255, 0.3);
+  color: #60a5fa;
+}
+
+/* ─── MOBILE RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    flex-direction: row;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .sidebar-logo {
+    margin-bottom: 0;
+  }
+
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-card-featured {
+    grid-column: span 1 !important;
+  }
+}

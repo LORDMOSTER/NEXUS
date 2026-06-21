@@ -1,0 +1,18 @@
+.texttype-root {
+  display: inline;
+}
+
+.texttype-cursor {
+  display: inline-block;
+  opacity: 1;
+  transition: opacity 0.1s;
+}
+
+.texttype-cursor--blink {
+  animation: texttype-blink 1s step-end infinite;
+}
+
+@keyframes texttype-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

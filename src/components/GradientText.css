@@ -1,0 +1,64 @@
+/* ============================================================
+   GradientText — animated gradient text via background-clip
+   ============================================================ */
+
+.animated-gradient-text {
+  position: relative;
+  margin: 0 auto;
+  display: inline-flex;
+  max-width: fit-content;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  font-weight: inherit;
+  transition: box-shadow 0.5s ease-out;
+  cursor: default;
+}
+
+/* With-border variant: adds a gradient ring and clipping */
+.animated-gradient-text.with-border {
+  padding: 0.35rem 0.75rem;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+/* The border ring is drawn as a pseudo-element overlay */
+.gradient-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Cut out the inner area so only the edge shows */
+.gradient-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  border-radius: inherit;
+  background-color: var(--bg-dominant, #050507);
+  z-index: -1;
+}
+
+/* The gradient is clipped to text shape */
+.text-content {
+  display: inline-block;
+  position: relative;
+  z-index: 2;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+
+  /* Inherit font settings from parent */
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}

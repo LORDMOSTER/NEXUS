@@ -1,0 +1,13 @@
+.rotating-text-wrapper {
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.rotating-text-inner {
+  display: inline-flex;
+}
+
+.rotating-text-char {
+  display: inline-block;
+}

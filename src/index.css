@@ -1,0 +1,352 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+/* ============================================================
+   FROSTED NEUMORPHISM — DUAL THEME PHYSICS ENGINE
+   ============================================================ */
+
+@layer base {
+  /* LIGHT MODE: Solid, opaque, readable */
+  :root {
+    --app-bg: #E2E8F0;
+    --surface: #E2E8F0;
+    --text-main: #2D3748;
+    --text-muted: #718096;
+    --accent: #7C3AED;
+
+    --shadow-dark: #b8c2d1;
+    --shadow-light: #ffffff;
+    --border-rim: rgba(255, 255, 255, 0.6);
+
+    /* Legacy aliases — keeps Studio & CreateAssessment working */
+    --soft-bg: #E2E8F0;
+    --soft-surface: #E2E8F0;
+    --bg-dominant: #E2E8F0;
+    --bg-secondary: #E2E8F0;
+    --text-primary: #2D3748;
+    --border-subtle: rgba(184, 194, 209, 0.5);
+    --accent-color: #7C3AED;
+    --accent-blue: #7C3AED;
+    --accent-glow: rgba(124, 58, 237, 0.12);
+    --neu-surface: #E2E8F0;
+    --neu-shadow-light: #ffffff;
+    --neu-shadow-dark: #b8c2d1;
+    --neu-radius-lg: 24px;
+    --neu-radius-md: 16px;
+  }
+
+  /* DARK MODE: Frosted Glass Neumorphism — canvas bleeds through */
+  .dark {
+    --app-bg: #090a0f;
+    --surface: rgba(18, 20, 28, 0.4); /* Translucent to catch the DarkVeil waves */
+    --text-main: #F7FAFC;
+    --text-muted: #A0AEC0;
+    --accent: #A855F7;
+
+    --shadow-dark: rgba(0, 0, 0, 0.9);
+    --shadow-light: rgba(255, 255, 255, 0.04);
+    --border-rim: rgba(255, 255, 255, 0.08);
+
+    /* Legacy aliases */
+    --soft-bg: #090a0f;
+    --soft-surface: rgba(18, 20, 28, 0.4);
+    --bg-dominant: #090a0f;
+    --bg-secondary: rgba(18, 20, 28, 0.4);
+    --text-primary: #F7FAFC;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --accent-color: #A855F7;
+    --accent-blue: #A855F7;
+    --accent-glow: rgba(168, 85, 247, 0.15);
+    --neu-surface: rgba(18, 20, 28, 0.4);
+    --neu-shadow-light: rgba(255, 255, 255, 0.04);
+    --neu-shadow-dark: rgba(0, 0, 0, 0.9);
+    --neu-radius-lg: 24px;
+    --neu-radius-md: 16px;
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-main);
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ============================================================
+   NEUMORPHIC EXTRUSION — Cards, Sidebars, Navbars
+   ============================================================ */
+.soft-surface {
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    8px 8px 20px var(--shadow-dark),
+    -8px -8px 20px var(--shadow-light),
+    inset 1px 1px 2px var(--border-rim);
+  border: 1px solid var(--border-rim);
+  border-radius: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.soft-surface-hover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    12px 12px 24px var(--shadow-dark),
+    -12px -12px 24px var(--shadow-light),
+    inset 1px 1px 2px var(--border-rim);
+}
+
+/* ============================================================
+   NEUMORPHIC DEPRESSION — Inputs, Active States
+   ============================================================ */
+.soft-inset {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.3s ease;
+}
+.soft-inset:focus {
+  border: 1px solid var(--accent);
+  box-shadow:
+    inset 6px 6px 12px var(--shadow-dark),
+    inset -6px -6px 12px var(--shadow-light),
+    0 0 0 1px var(--accent);
+}
+
+/* ============================================================
+   NEUMORPHIC BUTTONS
+   ============================================================ */
+.soft-button {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+  border: 1px solid var(--border-rim);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.soft-button:hover {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+}
+.soft-button:active {
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+}
+
+/* ============================================================
+   LEGACY .neu-* — Studio & CreateAssessment compatibility
+   ============================================================ */
+.neu-surface {
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--neu-radius-lg);
+  box-shadow:
+    8px 8px 20px var(--shadow-dark),
+    -8px -8px 20px var(--shadow-light),
+    inset 1px 1px 2px var(--border-rim);
+  border: 1px solid var(--border-rim);
+}
+
+.neu-input {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: var(--neu-radius-md);
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+  border: 1px solid transparent;
+  color: var(--text-main);
+  transition: all 0.3s ease;
+  outline: none;
+}
+.neu-input:focus {
+  border: 1px solid var(--accent);
+  box-shadow:
+    inset 6px 6px 12px var(--shadow-dark),
+    inset -6px -6px 12px var(--shadow-light),
+    0 0 0 1px var(--accent);
+}
+
+.neu-button {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  border-radius: var(--neu-radius-md);
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow:
+    4px 4px 10px var(--shadow-dark),
+    -4px -4px 10px var(--shadow-light);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 1px solid var(--border-rim);
+}
+.neu-button:hover {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+}
+.neu-button:active {
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+}
+
+.neu-button-primary {
+  background: var(--accent);
+  color: #000;
+  border-radius: var(--neu-radius-md);
+  font-weight: 700;
+  box-shadow:
+    4px 4px 12px var(--shadow-dark),
+    -4px -4px 12px var(--shadow-light);
+  transition: all 0.2s ease;
+  border: none;
+}
+.neu-button-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   LEGACY .glass-* — Input compatibility
+   ============================================================ */
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-rim);
+  box-shadow:
+    8px 8px 20px var(--shadow-dark),
+    -8px -8px 20px var(--shadow-light);
+}
+
+.glass-input {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: box-shadow 0.2s ease, border 0.2s ease;
+  appearance: none;
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+  border: 1px solid transparent;
+}
+.glass-input:focus {
+  border: 1px solid var(--accent);
+  box-shadow:
+    inset 5px 5px 10px var(--shadow-dark),
+    inset -5px -5px 10px var(--shadow-light),
+    0 0 0 1px var(--accent);
+}
+.glass-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+  cursor: pointer;
+}
+
+/* ============================================================
+   EXAM PRINT CONTAINER
+   ============================================================ */
+.exam-print-container {
+  border-radius: 8px;
+  box-shadow:
+    8px 8px 20px var(--shadow-dark),
+    -8px -8px 20px var(--shadow-light);
+}
+@media print { .exam-print-container { box-shadow: none; border-radius: 0; } }
+
+/* ============================================================
+   ACTIVE PILL / UNIT BUTTON
+   ============================================================ */
+.pill-button-active {
+  background: rgba(124, 58, 237, 0.12) !important;
+  border: 1px solid rgba(124, 58, 237, 0.35) !important;
+  color: var(--accent) !important;
+}
+.dark .pill-button-active {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: var(--accent) !important;
+}
+
+/* ============================================================
+   ACADEMIC EDITOR: TIPTAP CANVAS STYLES
+   ============================================================ */
+.academic-editor .ProseMirror {
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #000000 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 100%;
+  height: auto !important;
+  outline: none;
+}
+.academic-editor table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  margin: 0 !important;
+}
+.academic-editor td, .academic-editor th {
+  border: 1px solid #000000 !important;
+  padding: 8px !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+.academic-editor .tiptap { outline: none; }
+.academic-editor .tiptap hr {
+  border: none;
+  border-top: 1px solid black;
+  margin: 20px 0;
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--shadow-dark); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   PRINT / PDF EXPORT STYLES
+   ============================================================ */
+@media print {
+  .no-print { display: none !important; }
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    background: white !important;
+  }
+  main { display: block !important; }
+  tr { page-break-inside: avoid; }
+  .page-break-before { page-break-before: always; }
+}

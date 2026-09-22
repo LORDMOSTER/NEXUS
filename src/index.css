@@ -7,28 +7,51 @@
    ============================================================ */
 
 @layer base {
-  /* LIGHT MODE: Solid, opaque, readable */
+  /* ─────────────────────────────────────────────────────────
+     LIGHT MODE — Full design token set
+     ───────────────────────────────────────────────────────── */
   :root {
+    /* Backgrounds */
     --app-bg: #E2E8F0;
     --surface: #E2E8F0;
-    --text-main: #2D3748;
-    --text-muted: #718096;
-    --accent: #7C3AED;
+    --surface-elevated: #EAEFF6;
+    --surface-inset: rgba(0, 0, 0, 0.06);
 
+    /* Text — contrast-safe at all sizes (WCAG AA) */
+    --text-main: #1A202C;
+    --text-secondary: #4A5568;
+    --text-muted: #596070;
+
+    /* Accent — purple */
+    --accent: #7C3AED;
+    --accent-hover: #6D28D9;
+    --accent-glow: rgba(124, 58, 237, 0.12);
+
+    /* Semantic status colors */
+    --success: #16a34a;
+    --success-bg: rgba(22, 163, 74, 0.10);
+    --success-border: rgba(22, 163, 74, 0.25);
+    --warning: #b45309;
+    --warning-bg: rgba(180, 83, 9, 0.10);
+    --warning-border: rgba(180, 83, 9, 0.25);
+    --danger: #dc2626;
+    --danger-bg: rgba(220, 38, 38, 0.08);
+    --danger-border: rgba(220, 38, 38, 0.20);
+
+    /* Elevation shadows */
     --shadow-dark: #b8c2d1;
     --shadow-light: #ffffff;
     --border-rim: rgba(255, 255, 255, 0.6);
+    --border-subtle: rgba(184, 194, 209, 0.5);
 
-    /* Legacy aliases — keeps Studio & CreateAssessment working */
+    /* Legacy aliases — keep Studio & CreateAssessment working */
     --soft-bg: #E2E8F0;
     --soft-surface: #E2E8F0;
     --bg-dominant: #E2E8F0;
     --bg-secondary: #E2E8F0;
-    --text-primary: #2D3748;
-    --border-subtle: rgba(184, 194, 209, 0.5);
+    --text-primary: #1A202C;
     --accent-color: #7C3AED;
     --accent-blue: #7C3AED;
-    --accent-glow: rgba(124, 58, 237, 0.12);
     --neu-surface: #E2E8F0;
     --neu-shadow-light: #ffffff;
     --neu-shadow-dark: #b8c2d1;
@@ -36,17 +59,42 @@
     --neu-radius-md: 16px;
   }
 
-  /* DARK MODE: Frosted Glass Neumorphism — canvas bleeds through */
+  /* ─────────────────────────────────────────────────────────
+     DARK MODE — Frosted Glass Neumorphism
+     ───────────────────────────────────────────────────────── */
   .dark {
+    /* Backgrounds */
     --app-bg: #090a0f;
-    --surface: rgba(18, 20, 28, 0.4); /* Translucent to catch the DarkVeil waves */
-    --text-main: #F7FAFC;
-    --text-muted: #A0AEC0;
-    --accent: #A855F7;
+    --surface: rgba(18, 20, 28, 0.4);
+    --surface-elevated: rgba(26, 28, 40, 0.65);
+    --surface-inset: rgba(0, 0, 0, 0.30);
 
+    /* Text — contrast-safe */
+    --text-main: #F7FAFC;
+    --text-secondary: #CBD5E0;
+    --text-muted: #A0AEC0;
+
+    /* Accent */
+    --accent: #A855F7;
+    --accent-hover: #C084FC;
+    --accent-glow: rgba(168, 85, 247, 0.15);
+
+    /* Semantic status colors */
+    --success: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.10);
+    --success-border: rgba(74, 222, 128, 0.25);
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.10);
+    --warning-border: rgba(251, 191, 36, 0.25);
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.08);
+    --danger-border: rgba(248, 113, 113, 0.20);
+
+    /* Elevation shadows */
     --shadow-dark: rgba(0, 0, 0, 0.9);
     --shadow-light: rgba(255, 255, 255, 0.04);
     --border-rim: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.07);
 
     /* Legacy aliases */
     --soft-bg: #090a0f;
@@ -54,10 +102,8 @@
     --bg-dominant: #090a0f;
     --bg-secondary: rgba(18, 20, 28, 0.4);
     --text-primary: #F7FAFC;
-    --border-subtle: rgba(255, 255, 255, 0.07);
     --accent-color: #A855F7;
     --accent-blue: #A855F7;
-    --accent-glow: rgba(168, 85, 247, 0.15);
     --neu-surface: rgba(18, 20, 28, 0.4);
     --neu-shadow-light: rgba(255, 255, 255, 0.04);
     --neu-shadow-dark: rgba(0, 0, 0, 0.9);
@@ -80,29 +126,51 @@
     font-weight: 700;
     letter-spacing: -0.02em;
   }
+
+  /* ── Global keyboard focus ring — accent-colored, both themes ── */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 }
 
 /* ============================================================
    NEUMORPHIC EXTRUSION — Cards, Sidebars, Navbars
    ============================================================ */
+/* ELEVATION LEVEL 1: Base cards (exam cards, archive rows) */
 .soft-surface {
   background: var(--surface);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow:
-    8px 8px 20px var(--shadow-dark),
-    -8px -8px 20px var(--shadow-light),
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light),
     inset 1px 1px 2px var(--border-rim);
   border: 1px solid var(--border-rim);
   border-radius: 24px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.soft-surface-hover:hover {
-  transform: translateY(-3px);
+/* ELEVATION LEVEL 2: Raised panels (Settings panels, sidebar) */
+.soft-surface-raised {
+  background: var(--surface-elevated);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   box-shadow:
-    12px 12px 24px var(--shadow-dark),
-    -12px -12px 24px var(--shadow-light),
+    10px 10px 24px var(--shadow-dark),
+    -10px -10px 24px var(--shadow-light),
+    inset 1px 1px 2px var(--border-rim);
+  border: 1px solid var(--border-rim);
+  border-radius: 32px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.soft-surface-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 18px var(--shadow-dark),
+    -8px -8px 18px var(--shadow-light),
     inset 1px 1px 2px var(--border-rim);
 }
 
@@ -142,8 +210,9 @@
   cursor: pointer;
 }
 .soft-button:hover {
-  transform: translateY(2px);
-  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+  transform: translateY(1px);
+  box-shadow: 2px 2px 6px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+  color: var(--accent);
 }
 .soft-button:active {
   box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
@@ -278,6 +347,59 @@
 @media print { .exam-print-container { box-shadow: none; border-radius: 0; } }
 
 /* ============================================================
+   PAGINATED STUDIO CANVAS
+   ============================================================ */
+/* Outer scrollable column that houses all A4 page cards */
+.studio-canvas-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 32px 16px 48px;
+  overflow-y: auto;
+  height: 100%;
+  background: transparent;
+}
+
+/* Each A4 page card — always paper-white regardless of app theme */
+.page-card {
+  width: 800px;
+  min-height: 1056px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  padding: 48px;
+  position: relative;
+  flex-shrink: 0;
+  /* Subtle page-seam shadow — distinct from neumorphic card style */
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 -1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Page number badge — bottom-right, non-interactive */
+.page-number-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  font-size: 11px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #9ca3af;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Hidden offscreen measurement editor for pagination */
+.pagination-measure-editor {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 704px; /* 800px card - 96px padding */
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ============================================================
    ACTIVE PILL / UNIT BUTTON
    ============================================================ */
 .pill-button-active {
@@ -338,6 +460,28 @@
    ============================================================ */
 @media print {
   .no-print { display: none !important; }
+  /* STUDIO: each page card = one printed A4 page */
+  .studio-canvas-scroll {
+    gap: 0;
+    padding: 0;
+    display: block;
+  }
+  .page-card {
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+    width: 100% !important;
+    min-height: initial !important;
+    padding: 20mm 20mm !important;
+  }
+  .page-card:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  .page-number-badge {
+    display: block;
+  }
+  /* Legacy print area */
   .print-area {
     box-shadow: none !important;
     border: none !important;
@@ -349,4 +493,53 @@
   main { display: block !important; }
   tr { page-break-inside: avoid; }
   .page-break-before { page-break-before: always; }
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+}
+
+/* ============================================================
+   PAGE BREAK — Visual A4 separator in editor canvas
+   ============================================================ */
+.page-break {
+  page-break-after: always;
+  break-after: page;
+  margin-top: 2rem;
+  border-top: 2px dashed #cbd5e1;
+  position: relative;
+}
+
+.page-break::before {
+  content: 'Page Break';
+  position: absolute;
+  top: -0.65rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--app-bg, #E2E8F0);
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 0.5rem;
+  pointer-events: none;
+}
+
+/* ============================================================
+   REDUCED MOTION — Degrades all animations gracefully
+   Respects OS prefers-reduced-motion setting globally
+   ============================================================ */
+/* Fallback for components that don't pass their own colors */
+:root {
+  --color-primary: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -103,6 +103,11 @@ const Particles = ({
   const containerRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
+  // Respect OS prefers-reduced-motion — skip the WebGL canvas entirely
+  if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return null;
+  }
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;

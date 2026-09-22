@@ -3,19 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import useAssessmentStore from './store/useAssessmentStore';
 import useAuthStore from './store/useAuthStore';
 import api from './api';
-import { ArrowLeft, Sun, Moon, Download, ChevronDown } from 'lucide-react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { TextAlign } from '@tiptap/extension-text-align';
-import InstitutionalHeader from './components/InstitutionalHeader';
+import { ArrowLeft } from 'lucide-react';
+import ThemeToggle from './components/ThemeToggle';
+import PaginatedCanvas from './components/PaginatedCanvas';
 
 function Studio() {
   const navigate = useNavigate();
-  const { examType, selectedSubject, headerData, department, academicYear, yearSem, qpCode, quizUnits } = useAssessmentStore();
+  const { examType, selectedSubject, headerData, department, academicYear, yearSem, qpCode, quizUnits, targetUnits, numberOfQuestions } = useAssessmentStore();
   const { theme, toggleTheme } = useAuthStore();
   const date = headerData?.examDate || '';
 
@@ -31,33 +25,43 @@ function Studio() {
 
   const subjectCode = selectedSubject?.subjectCode || '';
   const subjectName = selectedSubject?.subjectName || '';
+
+  // â”€â”€ Combined HTML state â€” source of truth for the paginated canvas â”€â”€
+  const [combinedHtml, setCombinedHtml] = useState('');
+  const [partAHtml, setPartAHtml] = useState('');
+  const [partBHtml, setPartBHtml] = useState('');
+
+  // â”€â”€ Canvas ref â€” used to collect all page HTML for export â”€â”€
+  const canvasRef = useRef(null);
+
+  // â”€â”€ Chat state â”€â”€
   const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState([{ role: 'ai', content: 'Hello! Highlight any text on the canvas and ask me to rephrase it, change its K-Level, or generate a new question.' }]);
+  const [messages, setMessages] = useState([{ role: 'ai', content: 'Hello! Ask me to generate Part A or Part B, or type a modification request here.' }]);
   const [isChatting, setIsChatting] = useState(false);
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+
+  // â”€â”€ Export modal state â”€â”€
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportStatus, setExportStatus] = useState('idle'); // 'idle', 'processing', 'complete'
+  const [exportStatus, setExportStatus] = useState('idle');
   const [exportData, setExportData] = useState(null);
-  const [partAHtml, setPartAHtml] = useState("");
-  const [partBHtml, setPartBHtml] = useState("");
+
+  // â”€â”€ Generation loading states â”€â”€
   const [isGeneratingA, setIsGeneratingA] = useState(false);
   const [isGeneratingB, setIsGeneratingB] = useState(false);
-  const exportMenuRef = useRef(null);
+  const [aiProvider, setAiProvider] = useState('ollama');
+
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isChatting]);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
-        setIsExportMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // â”€â”€ Rebuild combined HTML whenever partA or partB changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const rebuildHtml = (newPartA, newPartB) => {
+    let combined = '';
+    if (newPartA) combined += newPartA;
+    if (newPartB) combined += newPartB;
+    setCombinedHtml(combined);
+  };
 
   const generatePartA = async () => {
     setIsGeneratingA(true);
@@ -67,12 +71,14 @@ function Studio() {
         subjectName,
         units: quizUnits || [],
         targetMarks: headerData?.maxMarks || 100,
-        duration: headerData?.duration || '3 Hours'
+        duration: headerData?.duration || '3 Hours',
+        aiProvider
       };
       const response = await api.post('/generate/part-a', payload);
       if (response.data && response.data.success) {
-        setPartAHtml(response.data.html);
-        rebuildEditor(response.data.html, partBHtml);
+        const newA = response.data.html;
+        setPartAHtml(newA);
+        rebuildHtml(newA, partBHtml);
       }
     } catch (error) {
       console.error("Part A Error:", error);
@@ -88,12 +94,14 @@ function Studio() {
         subjectName,
         units: quizUnits || [],
         targetMarks: headerData?.maxMarks || 100,
-        duration: headerData?.duration || '3 Hours'
+        duration: headerData?.duration || '3 Hours',
+        aiProvider
       };
       const response = await api.post('/generate/part-b', payload);
       if (response.data && response.data.success) {
-        setPartBHtml(response.data.html);
-        rebuildEditor(partAHtml, response.data.html);
+        const newB = response.data.html;
+        setPartBHtml(newB);
+        rebuildHtml(partAHtml, newB);
       }
     } catch (error) {
       console.error("Part B Error:", error);
@@ -101,46 +109,32 @@ function Studio() {
     setIsGeneratingB(false);
   };
 
-  const rebuildEditor = (partA, partB) => {
-    // This ensures Part A is ALWAYS above Part B, regardless of which button was clicked first.
-    let combinedHtml = "";
-    if (partA) combinedHtml += partA + "<br/><br/>";
-    if (partB) combinedHtml += partB;
-    editor.commands.setContent(combinedHtml);
-  };
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
-    
+
     const userMsg = chatInput;
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setChatInput('');
     setIsChatting(true);
 
-    // Grab the exact text the teacher highlighted in TipTap
-    const { from, to } = editor.state.selection;
-    const selectedText = editor.state.doc.textBetween(from, to, ' ');
-    const context = editor.getText().substring(0, 500); // Send some context
+    // Grab current full document HTML from canvas
+    const currentHtml = canvasRef.current?.getAllHtml?.() || combinedHtml;
 
     try {
       const response = await api.post('/generate/chat/modify', {
         prompt: userMsg,
-        selectedText,
-        context
+        selectedText: '',
+        context: currentHtml.substring(0, 500),
+        aiProvider
       });
 
       if (response.data.success) {
         setMessages(prev => [...prev, { role: 'ai', content: response.data.chatMessage }]);
-        
-        // TARGETED MODIFICATION: Only inject if the AI provided HTML
-        if (response.data.htmlUpdate && response.data.htmlUpdate.trim() !== "") {
-          if (selectedText) {
-            // Replace highlighted text
-            editor.chain().focus().insertContent(response.data.htmlUpdate).run();
-          } else {
-            // Append at cursor
-            editor.chain().focus().insertContent(`<p>${response.data.htmlUpdate}</p>`).run();
-          }
+
+        // If the AI returned HTML to inject, append it to the document
+        if (response.data.htmlUpdate && response.data.htmlUpdate.trim() !== '') {
+          setCombinedHtml(prev => prev + `<p>${response.data.htmlUpdate}</p>`);
         }
       }
     } catch (error) {
@@ -155,23 +149,17 @@ function Studio() {
 
   const handleSecureExport = async () => {
     setExportStatus('processing');
-    
-    const canvasElement = document.getElementById('exam-canvas');
-    if (!canvasElement) {
-      console.error("Canvas not found!");
-      setExportStatus('error');
-      return;
-    }
-    
-    const htmlContent = canvasElement.innerHTML;
-    
-    // Replace these with your actual Zustand/Auth store values
+
+    // Collect the combined innerHTML from all page cards via the canvas ref
+    const htmlContent = canvasRef.current?.getAllInnerHtml?.() || combinedHtml;
+
     const payload = {
       htmlContent,
-      examId: headerData?._id || "current_exam_id", 
-      teacherId: "FAC1029",
-      subjectCode: subjectCode || "CS3591",
-      currentYear: academicYear || "2026"
+      teacherId: "7321CSE001",
+      subjectCode: subjectCode || "CS3391",
+      subjectName: subjectName || "Object Oriented Programming",
+      examType: examType || "CAT-1",
+      academicYear: academicYear || "2025-2026"
     };
 
     try {
@@ -196,9 +184,9 @@ function Studio() {
   };
 
   const handleExportWord = () => {
-    const headerHtml = document.getElementById('institutional-header')?.innerHTML || '';
-    const editorHtml = editor.getHTML();
-    
+    const headerHtml = document.querySelector('.page-card-header')?.innerHTML || '';
+    const editorHtml = canvasRef.current?.getAllInnerHtml?.() || combinedHtml;
+
     const htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Export HTML To Doc</title>
@@ -219,7 +207,7 @@ function Studio() {
     const blob = new Blob(['\ufeff', htmlContent], {
       type: 'application/msword'
     });
-    
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -230,17 +218,20 @@ function Studio() {
     URL.revokeObjectURL(url);
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    ],
-    content: '<p style="text-align: center; color: gray;"><em>[ AI Generation will inject exam questions here... ]</em></p>',
-  });
+  // Header props object passed to PaginatedCanvas
+  const headerProps = {
+    academicYear,
+    yearSem,
+    examType,
+    maxMarks: headerData?.maxMarks || '100',
+    department,
+    duration: headerData?.duration || '3 Hours',
+    date: formattedDate,
+    subjectName: subjectCode ? `${subjectCode} - ${subjectName}` : subjectName,
+    codeDigits: qpCode ? qpCode.split('') : ['', '', '', '', ''],
+    // Extras used by ContinuationHeader:
+    subjectCode,
+  };
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col font-sans" style={{ background: 'var(--app-bg)', color: 'var(--text-main)' }}>
@@ -267,22 +258,16 @@ function Studio() {
         </h1>
 
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setIsExportModalOpen(true)}
-            className="soft-surface soft-surface-hover px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm"
+            disabled={exportStatus === 'processing'}
+            className="soft-surface soft-surface-hover px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-50"
             style={{ color: 'var(--accent)' }}
           >
-            Export & Lock Document
+            {exportStatus === 'processing' ? 'Processing...' : 'Export & Lock Document'}
           </button>
 
-          <button
-            onClick={toggleTheme}
-            className="soft-surface soft-surface-hover flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-sm"
-            style={{ color: 'var(--accent)' }}
-            title="Toggle Theme"
-          >
-            {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
+          <ThemeToggle size={40} />
         </div>
       </header>
 
@@ -291,84 +276,115 @@ function Studio() {
 
         {/* LEFT PANE (THE CANVAS) */}
         <section className="flex-1 soft-surface rounded-3xl overflow-hidden flex flex-col relative print-area">
-          <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center gap-8" data-lenis-prevent="true">
-            {/* ── PAGE 1: Institutional Header + start of questions ── */}
-            <div
-              id="exam-canvas"
-              className="exam-print-container w-full max-w-[800px] bg-white text-black p-12 shrink-0 transition-all relative print-area"
-              style={{ minHeight: '1056px' }}
-            >
-              {/* --- INSTITUTIONAL HEADER START --- */}
-              <InstitutionalHeader 
-                academicYear={academicYear}
-                yearSem={yearSem}
-                examType={examType}
-                maxMarks={headerData?.maxMarks || "100"}
-                department={department}
-                duration={headerData?.duration || "3 Hours"}
-                date={formattedDate}
-                subjectName={subjectCode ? `${subjectCode} - ${subjectName}` : subjectName}
-                codeDigits={qpCode ? qpCode.split('') : ['', '', '', '', '']}
-              />
-              {/* --- INSTITUTIONAL HEADER END --- */}
-
-              <div className="academic-editor">
-                <EditorContent editor={editor} />
-              </div>
-            </div>
-
-            {/* ── PAGE 2 (overflow continuation sheet) ── */}
-            <div
-              className="exam-print-container w-full max-w-[800px] bg-white text-black p-12 shrink-0 transition-all relative print-area page-break-before"
-              style={{ minHeight: '1056px' }}
-            >
-              <div className="text-center mb-4 border-b border-black pb-2">
-                <p className="text-[13px] font-bold uppercase tracking-widest text-gray-500">— Continuation Sheet —</p>
-                <p className="text-[12px] text-gray-400">{subjectCode} | {examType}</p>
-              </div>
-              <div style={{ minHeight: '900px' }} />
-            </div>
-          </div>
+          <PaginatedCanvas
+            ref={canvasRef}
+            html={combinedHtml}
+            headerProps={headerProps}
+          />
         </section>
 
         {/* RIGHT PANE: AI ASSISTANT SIDEBAR */}
         <div className="w-[380px] soft-surface rounded-[32px] p-6 flex flex-col flex-shrink-0 relative">
-          <h2 className="text-xl font-extrabold mb-4 tracking-tight text-[var(--accent)] flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            AI Assistant
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-extrabold tracking-tight text-[var(--accent)] flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              AI Assistant
+            </h2>
+            {/* NVIDIA / Ollama Provider Badge */}
+            {aiProvider === 'nvidia' ? (
+              <span style={{ background: 'linear-gradient(135deg, #76b900, #4a7a00)', color: '#fff', fontSize: '10px', fontWeight: '800', letterSpacing: '0.05em', padding: '3px 8px', borderRadius: '999px' }}>
+                âš¡ NVIDIA
+              </span>
+            ) : (
+              <span style={{ background: 'var(--soft-surface)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: '700', letterSpacing: '0.05em', padding: '3px 8px', borderRadius: '999px', border: '1px solid var(--border-rim)' }}>
+                ðŸ–¥ Ollama
+              </span>
+            )}
+          </div>
+
+          {/* â”€â”€ AI PROVIDER TOGGLE â”€â”€ */}
+          <div className="mb-4 soft-inset rounded-2xl p-3">
+            <p style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>AI Provider</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '12px', fontWeight: aiProvider === 'ollama' ? '800' : '500', color: aiProvider === 'ollama' ? 'var(--accent)' : 'var(--text-muted)', transition: 'all 0.2s' }}>Ollama</span>
+              {/* Pill Toggle */}
+              <button
+                id="ai-provider-toggle"
+                onClick={() => setAiProvider(p => p === 'ollama' ? 'nvidia' : 'ollama')}
+                style={{
+                  position: 'relative', width: '44px', height: '24px', borderRadius: '999px', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
+                  background: aiProvider === 'nvidia' ? 'linear-gradient(135deg, #76b900, #4a7a00)' : 'var(--border-rim)',
+                  transition: 'background 0.3s ease', boxShadow: aiProvider === 'nvidia' ? '0 0 10px rgba(118,185,0,0.4)' : 'none'
+                }}
+                aria-label="Toggle AI provider"
+              >
+                <span style={{
+                  position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                  left: aiProvider === 'nvidia' ? '23px' : '3px',
+                  transition: 'left 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                }} />
+              </button>
+              <span style={{ fontSize: '12px', fontWeight: aiProvider === 'nvidia' ? '800' : '500', color: aiProvider === 'nvidia' ? '#76b900' : 'var(--text-muted)', transition: 'all 0.2s' }}>NVIDIA</span>
+            </div>
+            {aiProvider === 'nvidia' && (
+              <p style={{ fontSize: '10px', color: '#76b900', marginTop: '6px', fontWeight: '600' }}>
+
+              </p>
+            )}
+            {aiProvider === 'ollama' && (
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', fontWeight: '500' }}>
+                Local phi4-mini Â· Ollama must be running
+              </p>
+            )}
+          </div>
 
           {/* Quick Actions (Keep your existing Part A / Part B buttons here) */}
           <div className="flex gap-2 mb-4">
-            <button 
-              onClick={generatePartA} 
-              disabled={isGeneratingA}
-              className="flex-1 py-2 rounded-xl font-bold soft-surface soft-surface-hover text-[var(--accent)] transition-all disabled:opacity-50 text-xs"
-            >
-              {isGeneratingA ? 'Gen...' : 'Gen Part A'}
-            </button>
-            <button 
-              onClick={generatePartB} 
-              disabled={isGeneratingB}
-              className="flex-1 py-2 rounded-xl font-bold soft-surface soft-surface-hover text-[var(--accent)] transition-all disabled:opacity-50 text-xs"
-            >
-              {isGeneratingB ? 'Gen...' : 'Gen Part B&C'}
-            </button>
+              <>
+                <button
+                  onClick={generatePartA}
+                  disabled={isGeneratingA}
+                  className="flex-1 py-2.5 rounded-xl font-bold soft-surface soft-surface-hover text-[var(--accent)] transition-all disabled:opacity-50 text-xs flex items-center justify-center gap-1.5"
+                >
+                  {isGeneratingA ? (
+                    <><div className="w-3 h-3 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div> Generating...</>
+                  ) : 'Gen Part A'}
+                </button>
+                <button
+                  onClick={generatePartB}
+                  disabled={isGeneratingB}
+                  className="flex-1 py-2.5 rounded-xl font-bold soft-surface soft-surface-hover text-[var(--accent)] transition-all disabled:opacity-50 text-xs flex items-center justify-center gap-1.5"
+                >
+                  {isGeneratingB ? (
+                    <><div className="w-3 h-3 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div> Generating...</>
+                  ) : 'Gen Part B&C'}
+                </button>
+              </>
           </div>
 
           {/* CHAT HISTORY THREAD */}
-          <div className="flex-1 overflow-y-auto mb-4 flex flex-col gap-4 pr-2 custom-scrollbar" data-lenis-prevent="true">
+          <div className="flex-1 overflow-y-auto mb-4 flex flex-col gap-4 pr-2 custom-scrollbar" style={{ minHeight: '120px' }} data-lenis-prevent="true">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`p-4 max-w-[85%] text-sm font-medium leading-relaxed ${
-                  msg.role === 'user' 
-                    ? 'soft-surface rounded-2xl rounded-tr-sm text-[var(--accent)]' // Convex for Teacher
-                    : 'soft-inset rounded-2xl rounded-tl-sm text-[var(--text-main)]' // Concave for AI
-                }`}>
+                    msg.role === 'user'
+                      ? 'soft-surface rounded-2xl rounded-tr-sm text-[var(--accent)]'
+                      : 'soft-inset rounded-2xl rounded-tl-sm text-[var(--text-main)]'
+                  }`}>
                   {msg.content}
                 </div>
               </div>
             ))}
+            {/* Empty state: only the AI welcome bubble, nothing else yet */}
+            {messages.length === 1 && !isChatting && (
+              <div className="flex flex-col items-center justify-center gap-2 py-6 opacity-40">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--text-muted)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <p className="text-xs font-medium text-center" style={{ color: 'var(--text-muted)' }}>Generate questions first,<br/>then ask me to modify them.</p>
+              </div>
+            )}
             {isChatting && (
               <div className="flex justify-start">
                 <div className="soft-inset p-4 rounded-2xl rounded-tl-sm text-sm text-[var(--text-muted)] animate-pulse">
@@ -381,14 +397,14 @@ function Studio() {
 
           {/* CONVERSATIONAL INPUT */}
           <div className="mt-auto">
-            <textarea 
+            <textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-              className="soft-inset w-full p-4 rounded-2xl text-sm resize-none h-24 mb-3 text-[var(--text-main)] placeholder-[var(--text-muted)]" 
+              className="soft-inset w-full p-4 rounded-2xl text-sm resize-none h-24 mb-3 text-[var(--text-main)] placeholder-[var(--text-muted)]"
               placeholder="Highlight text to edit, or ask a question..."
             />
-            <button 
+            <button
               onClick={handleSendMessage}
               disabled={isChatting || !chatInput.trim()}
               className="w-full py-3 rounded-xl font-bold bg-[var(--accent)] text-[#ffffff] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg"
@@ -403,13 +419,13 @@ function Studio() {
       {/* PHASE 6 EXPORT MODAL */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md transition-opacity">
-          
+
           <div className="soft-surface w-full max-w-lg p-8 rounded-[32px] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-transform scale-100" style={{ color: 'var(--text-main)' }}>
-            
+
             <h2 className="text-2xl font-extrabold text-[var(--text-main)] mb-2 tracking-tight">
               Secure Export & Lock
             </h2>
-            
+
             {exportStatus === 'idle' && (
               <>
                 <p className="text-[var(--text-muted)] mb-8 font-medium leading-relaxed">
@@ -427,33 +443,33 @@ function Studio() {
             )}
 
             {exportStatus === 'processing' && (
-        <div className="py-12 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mb-6"></div>
-          <p className="text-[var(--text-main)] font-bold text-lg animate-pulse">Locking Database & Generating PDF...</p>
-        </div>
-      )}
+              <div className="py-12 flex flex-col items-center justify-center">
+                <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mb-6"></div>
+                <p className="text-[var(--text-main)] font-bold text-lg animate-pulse">Locking Database & Generating PDF...</p>
+              </div>
+            )}
 
-      {exportStatus === 'complete' && (
-        <div className="flex flex-col animate-in fade-in zoom-in duration-300">
-          <div className="soft-inset p-4 rounded-2xl mb-6 border border-green-500/20 bg-green-500/5">
-            <p className="text-green-400 font-bold mb-1">Database Locked Successfully</p>
-            <p className="text-[var(--text-muted)] text-sm font-medium">
-              The document is now permanently sealed. You can generate grading rubrics from the Archives tab.
-            </p>
-          </div>
-          
-          <div className="flex flex-col gap-3">
-            <button onClick={downloadEncryptedPDF} className="w-full py-4 rounded-xl font-bold bg-[var(--accent)] text-[#000] shadow-lg flex justify-center items-center gap-2 hover:scale-[1.02] transition-transform">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Download Final PDF
-            </button>
-          </div>
-          
-          <button onClick={() => setIsExportModalOpen(false)} className="mt-6 text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-sm transition-colors text-center w-full">
-            Close Workspace
-          </button>
-        </div>
-      )}
+            {exportStatus === 'complete' && (
+              <div className="flex flex-col animate-in fade-in zoom-in duration-300">
+                <div className="soft-inset p-4 rounded-2xl mb-6 border border-green-500/20 bg-green-500/5">
+                  <p className="text-green-400 font-bold mb-1">Database Locked Successfully</p>
+                  <p className="text-[var(--text-muted)] text-sm font-medium">
+                    The document is now permanently sealed. You can generate grading rubrics from the Archives tab.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button onClick={downloadEncryptedPDF} className="w-full py-4 rounded-xl font-bold bg-[var(--accent)] text-[#000] shadow-lg flex justify-center items-center gap-2 hover:scale-[1.02] transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Download Final PDF
+                  </button>
+                </div>
+
+                <button onClick={() => setIsExportModalOpen(false)} className="mt-6 text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-sm transition-colors text-center w-full">
+                  Close Workspace
+                </button>
+              </div>
+            )}
 
             {exportStatus === 'error' && (
               <div className="py-8 flex flex-col items-center justify-center text-center">

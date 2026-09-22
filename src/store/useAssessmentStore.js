@@ -17,6 +17,11 @@ const useAssessmentStore = create((set) => ({
   quizUnits: [],
   quizQuestionCount: 20,
 
+  subjectCode: '',
+  subjectName: '',
+  targetUnits: [],
+  numberOfQuestions: 20,
+
   setExamType: (type) => set({ examType: type }),
   setSelectedSubject: (subject) => set({ selectedSubject: subject }),
   setExamPattern: (pattern) => set({ examPattern: pattern }),
@@ -34,10 +39,15 @@ const useAssessmentStore = create((set) => ({
       : [...state.quizUnits, unit]
   })),
   setQuizQuestionCount: (count) => set({ quizQuestionCount: count }),
+  setAssessmentData: (data) => set((state) => ({ ...state, ...data })),
   
   resetAssessment: () => set({
     examType: 'CAT-1',
     selectedSubject: null,
+    subjectCode: '',
+    subjectName: '',
+    targetUnits: [],
+    numberOfQuestions: 20,
     examPattern: '',
     headerData: { examDate: '', maxMarks: '100', duration: '3 Hours' },
     department: 'CSE',

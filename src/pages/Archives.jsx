@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import CustomSelect from '../components/CustomSelect';
+import useAuthStore from '../store/useAuthStore';
 
 export default function Archives() {
   const [archives, setArchives] = useState([]);
@@ -7,6 +9,27 @@ export default function Archives() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'name-asc', 'name-desc'
   const [generatingKeyId, setGeneratingKeyId] = useState(null);
+  const deleteExam = useAuthStore(state => state.deleteExam);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  const handleDeleteArchive = (recordId) => {
+    setConfirmDeleteId(recordId);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    const recordId = confirmDeleteId;
+    setConfirmDeleteId(null);
+    setDeletingId(recordId);
+    const success = await deleteExam(recordId);
+    if (success) {
+      setArchives(prev => prev.filter(r => r._id !== recordId));
+    } else {
+      alert('Failed to delete exam.');
+    }
+    setDeletingId(null);
+  };
 
   // Fetch data from the live database
   useEffect(() => {
@@ -125,25 +148,26 @@ export default function Archives() {
         </div>
         
         <div className="relative min-w-[200px] w-full md:w-auto">
-          <select 
+          <CustomSelect 
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="soft-button w-full pl-4 pr-12 py-4 rounded-xl font-bold text-[var(--text-main)] appearance-none cursor-pointer outline-none"
-          >
-            <option className="bg-[var(--app-bg)] text-[var(--text-main)]" value="newest">Sort by: Newest First</option>
-            <option className="bg-[var(--app-bg)] text-[var(--text-main)]" value="oldest">Sort by: Oldest First</option>
-            <option className="bg-[var(--app-bg)] text-[var(--text-main)]" value="name-asc">Sort by: Name (A-Z)</option>
-            <option className="bg-[var(--app-bg)] text-[var(--text-main)]" value="name-desc">Sort by: Name (Z-A)</option>
-          </select>
-          <svg className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-main)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            onChange={setSortBy}
+            className="soft-button w-full pl-4 pr-4 py-4 rounded-xl font-bold text-[var(--text-main)]"
+            options={[
+              { value: 'newest', label: 'Sort by: Newest First' },
+              { value: 'oldest', label: 'Sort by: Oldest First' },
+              { value: 'name-asc', label: 'Sort by: Name (A-Z)' },
+              { value: 'name-desc', label: 'Sort by: Name (Z-A)' },
+            ]}
+          />
         </div>
       </div>
 
       {/* Archive List */}
       <div className="flex flex-col gap-4">
         {isLoading ? (
-          <div className="soft-surface p-12 rounded-[24px] flex justify-center items-center">
+          <div className="soft-surface p-12 rounded-[24px] flex flex-col justify-center items-center gap-4">
             <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Fetching records...</p>
           </div>
         ) : (
           <>
@@ -161,7 +185,11 @@ export default function Archives() {
                     <div className="flex flex-wrap items-center gap-3 mb-1">
                       <span className="text-[var(--accent)] font-extrabold tracking-widest text-xs uppercase">{record.code}</span>
                       <span className="text-xs font-bold text-[var(--text-main)] bg-[var(--text-main)]/10 px-2 py-0.5 rounded uppercase">{record.type}</span>
-                      <span className="text-xs font-bold text-green-500 border border-green-500/20 bg-green-500/10 px-2 py-0.5 rounded uppercase tracking-wider">{record.status}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
+                              record.status === 'LOCKED'
+                                ? 'text-[var(--success)] bg-[var(--success-bg)] border-[var(--success-border)]'
+                                : 'text-[var(--warning)] bg-[var(--warning-bg)] border-[var(--warning-border)]'
+                            }`}>{record.status}</span>
                     </div>
                     <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 leading-tight truncate">{record.name}</h3>
                     
@@ -179,40 +207,87 @@ export default function Archives() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3 w-full md:w-auto mt-4 md:mt-0 opacity-100 lg:opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                   <button 
-                     onClick={() => handleDownload(record._id, 'key')}
-                     disabled={generatingKeyId === record._id}
-                     className="soft-button flex-1 md:flex-none px-5 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 text-[var(--text-main)] disabled:opacity-50"
-                   >
-                     {generatingKeyId === record._id ? (
-                       <>
-                         <div className="w-4 h-4 border-2 border-[var(--text-main)] border-t-transparent rounded-full animate-spin"></div>
-                         Synthesizing...
-                       </>
-                     ) : (
-                       "Grading Key"
-                     )}
-                   </button>
-                   <button 
-                     onClick={() => handleDownload(record._id, 'pdf')}
-                     className="soft-button flex-1 md:flex-none px-5 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 text-[var(--accent)]"
-                   >
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                     Encrypted PDF
-                   </button>
-                </div>
+                  <div className="flex flex-wrap gap-3 w-full md:w-auto mt-4 md:mt-0 opacity-100 lg:opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                     <button 
+                       onClick={() => handleDownload(record._id, 'key')}
+                       disabled={generatingKeyId === record._id}
+                       title="Generate AI Grading Key"
+                       className="soft-button w-36 px-4 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 text-[var(--text-main)] disabled:opacity-50"
+                     >
+                       {generatingKeyId === record._id ? (
+                         <>
+                           <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+                           <span>Working...</span>
+                         </>
+                       ) : (
+                         <>
+                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                           Grading Key
+                         </>
+                       )}
+                     </button>
+                     <button 
+                       onClick={() => handleDownload(record._id, 'pdf')}
+                       title="Download Encrypted PDF"
+                       className="soft-button w-36 px-4 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 text-[var(--accent)]"
+                     >
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                       Encrypted PDF
+                     </button>
+                     <button
+                       onClick={() => handleDeleteArchive(record._id)}
+                       disabled={deletingId === record._id}
+                       title="Permanently delete this record"
+                       className="soft-button w-11 px-3 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center text-[var(--danger)] hover:bg-[var(--danger-bg)] transition-colors disabled:opacity-50"
+                     >
+                       {deletingId === record._id ? (
+                         <div className="w-5 h-5 border-2 border-[var(--danger)] border-t-transparent rounded-full animate-spin"></div>
+                       ) : (
+                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                       )}
+                     </button>
+                  </div>
               </div>
             ))}
             
             {processedRecords.length === 0 && (
-              <div className="soft-surface p-12 rounded-[24px] text-center text-[var(--text-muted)] font-medium">
-                No archived documents found matching your criteria.
+              <div className="soft-surface p-16 rounded-[24px] text-center flex flex-col items-center gap-4">
+                <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--text-muted)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="font-bold text-lg" style={{ color: 'var(--text-main)' }}>No archives found</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {searchTerm ? `No records match "${searchTerm}"` : 'Lock and export an exam to see it here.'}
+                </p>
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="soft-surface p-6 rounded-[24px] max-w-md w-full shadow-2xl border border-red-500/20">
+            <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">Delete Archive</h3>
+            <p className="text-[var(--text-muted)] mb-6">Are you sure you want to permanently delete this exam? This action cannot be undone.</p>
+            <div className="flex gap-4 justify-end">
+              <button 
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-5 py-2.5 rounded-xl font-bold text-[var(--text-main)] hover:bg-[var(--text-main)]/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-5 py-2.5 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

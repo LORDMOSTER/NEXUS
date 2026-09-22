@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, Sun, Moon } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import ThemeToggle from './components/ThemeToggle';
 import useAuthStore from './store/useAuthStore';
 import CreateAssessment from './CreateAssessment';
 import Archives from './pages/Archives';
+import ManageSubjects from './pages/ManageSubjects';
 import Settings from './pages/Settings';
 import Particles from './components/Particles';
 import ShinyText from './components/ShinyText';
@@ -16,15 +18,15 @@ function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isDarkMode = theme === 'dark';
 
-  const sideLinks = ['Dashboard', 'Create Assessment', 'Archives', 'Settings'];
+  const sideLinks = ['Dashboard', 'Create Assessment', 'Manage Subjects', 'Archives', 'Settings'];
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
 
   return (
     <div className="flex min-h-screen relative z-0 overflow-x-hidden font-sans" style={{ background: 'var(--app-bg)' }}>
-      
+
       {/* LIVE BACKGROUND (Only visible in Dark Mode) */}
-      <div className="fixed inset-0 z-[-1] pointer-events-none transition-opacity duration-500" style={{ opacity: isDarkMode ? 1 : 0 }}>
+      <div className="fixed inset-0 z-[-1] pointer-events-none transition-opacity duration-700" style={{ opacity: isDarkMode ? 1 : 0 }}>
         <Particles
           particleColors={["#ffffff"]}
           particleCount={200}
@@ -42,9 +44,8 @@ function Dashboard() {
       {/* 1. Menu Toggle (Top Left) */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className={`fixed top-8 z-[60] soft-button w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isSidebarOpen ? 'left-[260px]' : 'left-8'
-        }`}
+        className={`fixed top-8 z-[60] soft-button w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'left-[260px]' : 'left-8'
+          }`}
         style={{ color: 'var(--accent)' }}
         aria-label="Toggle Navigation"
       >
@@ -56,19 +57,18 @@ function Dashboard() {
         </svg>
       </button>
 
-      {/* 2. Theme Toggle (Top Right) */}
-      <button
-        onClick={toggleTheme}
-        className="fixed top-6 right-8 z-[60] soft-button w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
-        style={{ color: 'var(--accent)' }}
-        aria-label="Toggle Theme"
-      >
-        {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
-      </button>
+      {/* 2. Theme Toggle (Top Right) — Premium circle-spread */}
+      <div className="fixed top-6 right-8 z-[60]">
+        <ThemeToggle size={48} />
+      </div>
 
       {/* COLLAPSIBLE LEFT SIDEBAR */}
       <aside
-        className={`fixed inset-y-0 left-0 w-80 soft-surface rounded-none rounded-r-[40px] z-50 flex flex-col py-10 px-8 transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className="fixed inset-y-0 left-0 w-80 soft-surface rounded-none rounded-r-[40px] z-50 flex flex-col py-10 px-8"
+        style={{
+          clipPath: isSidebarOpen ? 'circle(150% at 52px 52px)' : 'circle(0px at 52px 52px)',
+          transition: `clip-path ${isSidebarOpen ? '1s' : '0.4s'} cubic-bezier(0.25, 0.46, 0.45, 0.94)`
+        }}
       >
         {/* Premium ShinyText Logo */}
         <div className="mb-12 mt-6 px-2">
@@ -90,15 +90,13 @@ function Dashboard() {
                 setActiveNav(link);
                 setIsSidebarOpen(false);
               }}
-              className={`text-left px-5 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-3 relative ${
-                activeNav === link
-                  ? 'soft-inset font-bold translate-x-1'
-                  : 'hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
-              }`}
-              style={{ color: activeNav === link ? 'var(--accent)' : 'var(--text-muted)' }}
+              className={`text-left px-5 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-3 relative ${activeNav === link
+                  ? 'soft-inset font-bold translate-x-1 text-[var(--accent)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-black/10 dark:hover:bg-white/10 hover:translate-x-1'
+                }`}
             >
               {activeNav === link && (
-                <div 
+                <div
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-3/5 rounded-r-full"
                   style={{ background: 'var(--accent)', boxShadow: '0 0 10px var(--accent-glow)' }}
                 />
@@ -110,8 +108,7 @@ function Dashboard() {
 
         <div
           onClick={logout}
-          className="mt-auto flex items-center gap-3 cursor-pointer transition-colors font-semibold px-5 py-3 hover:text-red-500"
-          style={{ color: 'var(--text-muted)' }}
+          className="mt-auto flex items-center gap-3 cursor-pointer transition-all duration-300 font-semibold px-5 py-3 rounded-xl text-[var(--text-muted)] hover:bg-red-500/10 hover:text-red-500 hover:translate-x-1"
         >
           <LogOut size={20} />
           Logout
@@ -147,7 +144,7 @@ function Dashboard() {
               {/* ── KINETIC HEADER ──────────────────────────────── */}
               <div className="mb-2 mt-4 flex flex-col gap-3">
                 <ShinyText
-                  text={`Welcome back, ${user?.name ? (user.name.split(' ')[1] || user.name) : 'Dr. Chandrasekar'}`}
+                  text={`Welcome back, ${user?.name || 'Dr. Chandrasekar'}`}
                   speed={3}
                   className="text-5xl md:text-6xl font-extrabold tracking-tight"
                   color="var(--text-main)"
@@ -178,11 +175,11 @@ function Dashboard() {
                   Your Exam Records
                 </h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {exams.length} record{exams.length !== 1 ? 's' : ''} for {user?.departmentCode}
+                 {exams.length} record{exams.length !== 1 ? 's' : ''} for {user?.departmentCode}
                 </p>
               </div>
 
-              {/* ── TRUE BENTO GRID ──────────────────────────────── */}
+              {/* ── NORMAL GRID ──────────────────────────────── */}
               {exams.length === 0 ? (
                 <div className="soft-surface rounded-[32px] p-12 text-center">
                   <p className="text-lg font-semibold" style={{ color: 'var(--text-muted)' }}>
@@ -197,24 +194,21 @@ function Dashboard() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-[220px] gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-[220px] gap-6">
                   {exams.map((exam, index) => {
-                    // Every 1st and 4th card (0-indexed: 0, 3, 6...) spans 2 columns
-                    const isWide = index % 3 === 0;
-
                     return (
                       <div
                         key={exam._id || index}
-                        className={`soft-surface p-8 rounded-[32px] flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-2 group ${isWide ? 'md:col-span-2' : 'md:col-span-1'}`}
-                        style={{ '--hover-shadow': '0 20px 40px rgba(0,0,0,0.3)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)'}
-                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = ''}
+                        className={`soft-surface p-8 rounded-[32px] flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-1 group`}
                       >
                         {/* Top Row */}
                         <div className="flex justify-between items-start">
                           <span
-                            className="soft-inset px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-inner"
-                            style={{ color: 'var(--accent)' }}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
+                              exam.status === 'Locked'
+                                ? 'text-[var(--success)] bg-[var(--success-bg)] border border-[var(--success-border)]'
+                                : 'text-[var(--warning)] bg-[var(--warning-bg)] border border-[var(--warning-border)]'
+                            }`}
                           >
                             {exam.status === 'Locked' ? 'LOCKED' : 'DRAFT'}
                           </span>
@@ -253,6 +247,8 @@ function Dashboard() {
 
             </div>
 
+          ) : activeNav === 'Manage Subjects' ? (
+            <ManageSubjects />
           ) : activeNav === 'Archives' ? (
             <Archives />
           ) : activeNav === 'Settings' ? (

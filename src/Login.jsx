@@ -5,6 +5,7 @@ import useAuthStore from './store/useAuthStore';
 import ShinyText from './components/ShinyText';
 import Aurora from './components/Aurora';
 import Particles from './components/Particles';
+import ShapeGrid from './components/ShapeGrid';
 import './Login.css';
 
 function Login() {
@@ -34,7 +35,7 @@ function Login() {
     <div className={`login-wrapper ${theme}`}>
       {/* Dynamic Backgrounds */}
       <div className="login-bg-layer">
-        {isDarkMode && (
+        {isDarkMode ? (
           <Particles
             particleColors={["#ffffff", "#8b5cf6", "#3b82f6"]}
             particleCount={250}
@@ -45,6 +46,16 @@ function Login() {
             alphaParticles={true}
             disableRotation={false}
             pixelRatio={Math.min(window.devicePixelRatio || 1, 2)}
+          />
+        ) : (
+          <ShapeGrid 
+            speed={0.4}
+            squareSize={40}
+            direction='diagonal'
+            borderColor="rgba(139, 92, 246, 0.15)"
+            hoverFillColor="rgba(139, 92, 246, 0.1)"
+            shape='square'
+            hoverTrailAmount={2}
           />
         )}
       </div>
@@ -64,7 +75,7 @@ function Login() {
             speed={3}
             className="text-4xl font-extrabold tracking-tight login-brand"
             color={isDarkMode ? "#f8fafc" : "#1e293b"}
-            shineColor={isDarkMode ? "#c4b5fd" : "#3b82f6"}
+            shineColor={isDarkMode ? "#c4b5fd" : "#8b5cf6"}
           />
           <p className="login-subtitle">Sign in to continue your journey</p>
         </div>

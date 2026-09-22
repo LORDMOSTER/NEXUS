@@ -68,6 +68,23 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  deleteExam: async (id) => {
+    try {
+      const response = await api.delete(`/exams/${id}`);
+      if (response.data.success) {
+        // Optimistically remove from state so UI updates instantly
+        set((state) => ({
+          exams: state.exams.filter((exam) => exam._id !== id)
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to delete exam:', error);
+      return false;
+    }
+  },
+
   login: async (structuredId, passcode) => {
     set({ isLoading: true, error: null });
     try {
@@ -99,6 +116,23 @@ const useAuthStore = create((set, get) => ({
       // Clear anything from local storage just in case
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+    }
+  },
+
+  updateProfile: async (name) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.put('/auth/profile', { name });
+      const { user } = response.data;
+      
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      set({ user, isLoading: false });
+      return true;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to update profile';
+      set({ isLoading: false, error: errorMessage });
+      return false;
     }
   },
 

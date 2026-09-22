@@ -60,6 +60,7 @@ function CreateAssessment() {
     toggleQuizUnit,
     quizQuestionCount,
     setQuizQuestionCount,
+    setAssessmentData,
   } = useAssessmentStore();
   const revealRef = useScrollReveal();
   const navigate = useNavigate();
@@ -114,43 +115,54 @@ function CreateAssessment() {
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  // Stepper logic
+  const stepDone1 = examType && (examType !== 'Freestyle Quiz' ? (academicYear && yearSem && department) : true);
+  const stepDone2 = !!selectedSubject;
+  const stepDone3 = stepDone2 && (examType === 'Freestyle Quiz' ? quizUnits.length > 0 : !!headerData?.examDate);
+  const steps = [
+    { label: 'Exam Context', done: !!stepDone1 },
+    { label: 'Blueprint', done: !!stepDone2 },
+    { label: 'Review', done: !!stepDone3 },
+  ];
+  const currentStep = stepDone3 ? 2 : stepDone2 ? 1 : 0;
+
   return (
     <div ref={revealRef} className="max-w-4xl mx-auto w-full pb-12 mt-4">
       {/* ── Page Header ──────────────────────────────────────── */}
-      <h1 className="text-3xl font-bold mb-2 tracking-tight text-[var(--text-main)]">
-        Create Assessment
-      </h1>
-      <p className="text-[var(--text-muted)] mb-8">
-        Define the parameters and blueprint directives for the new examination.
-      </p>
+      <h1 className="text-3xl font-bold mb-2 tracking-tight" style={{ color: 'var(--text-main)' }}>Create Assessment</h1>
+      <p className="mb-6" style={{ color: 'var(--text-muted)' }}>Define the parameters and blueprint directives for the new examination.</p>
 
-      {/* ── Tab System ─────────────────────────────────────────── */}
-      <div className="relative flex border-b mb-8" style={{ borderColor: 'var(--border-subtle)' }}>
-        <button
-          onClick={() => {
-            if (examType === 'Freestyle Quiz') setExamType('CAT-1');
-          }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors duration-200 ${
-            examType !== 'Freestyle Quiz'
-              ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] border-b-2 border-transparent'
-          }`}
-        >
-          <BookOpen size={16} />
-          Standard Exam
-        </button>
-        <button
-          onClick={() => setExamType('Freestyle Quiz')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors duration-200 ${
-            examType === 'Freestyle Quiz'
-              ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] border-b-2 border-transparent'
-          }`}
-        >
-          <Zap size={16} />
-          Freestyle Quiz
-        </button>
+      {/* ── Progress Stepper ─────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-8">
+        {steps.map((step, idx) => (
+          <React.Fragment key={step.label}>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300"
+                style={{
+                  background: step.done ? 'var(--accent)' : idx === currentStep ? 'var(--accent-glow)' : 'var(--surface-inset)',
+                  color: step.done ? '#fff' : idx === currentStep ? 'var(--accent)' : 'var(--text-muted)',
+                  border: idx === currentStep && !step.done ? '2px solid var(--accent)' : '2px solid transparent',
+                }}
+              >
+                {step.done ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                ) : (idx + 1)}
+              </div>
+              <span className="text-xs font-semibold hidden sm:block transition-colors"
+                style={{ color: step.done || idx === currentStep ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                {step.label}
+              </span>
+            </div>
+            {idx < steps.length - 1 && (
+              <div className="flex-1 h-0.5 rounded-full transition-all duration-500"
+                style={{ background: step.done ? 'var(--accent)' : 'var(--border-subtle)' }} />
+            )}
+          </React.Fragment>
+        ))}
       </div>
+
+
 
       {/* ── CARD 1: Exam Context ──────────────────────────────── */}
       <div className="soft-surface p-8 rounded-3xl mb-8 flex flex-col gap-6">
@@ -351,21 +363,27 @@ function CreateAssessment() {
               </div>
               <div className="flex flex-col gap-2">
                 <SectionLabel>Max Marks</SectionLabel>
-                <input
-                  type="number"
-                  value={headerData.maxMarks}
-                  readOnly
-                  className="soft-inset w-full px-4 py-3 text-sm opacity-50 cursor-not-allowed"
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={headerData.maxMarks}
+                    readOnly
+                    className="soft-inset w-full px-4 py-3 text-sm opacity-50 cursor-not-allowed pr-8"
+                  />
+                  <svg className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
               </div>
               <div className="flex flex-col gap-2">
                 <SectionLabel>Duration</SectionLabel>
-                <input
-                  type="text"
-                  value={headerData.duration}
-                  readOnly
-                  className="soft-inset w-full px-4 py-3 text-sm opacity-50 cursor-not-allowed"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={headerData.duration}
+                    readOnly
+                    className="soft-inset w-full px-4 py-3 text-sm opacity-50 cursor-not-allowed pr-8"
+                  />
+                  <svg className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
               </div>
             </div>
 
@@ -385,12 +403,31 @@ function CreateAssessment() {
 
       {/* ── Generate Button ───────────────────────────────────── */}
       <div className={!selectedSubject ? 'opacity-40 pointer-events-none' : ''}>
-        <button
-          onClick={() => navigate('/studio')}
-          className="w-full py-4 rounded-xl font-bold text-lg soft-surface soft-surface-hover text-[var(--accent)] transition-all"
-        >
-          Generate Assessment
-        </button>
+        {examType === 'Freestyle Quiz' ? (
+          <button
+            onClick={() => {
+              setAssessmentData({
+                subjectCode: selectedSubject?.subjectCode || "QUIZ",
+                subjectName: selectedSubject?.subjectName || "Custom Topic",
+                examType: 'Freestyle Quiz',
+                targetUnits: quizUnits,
+                numberOfQuestions: quizQuestionCount
+              });
+              navigate('/studio');
+            }}
+            className="w-full px-8 py-4 bg-[var(--accent)] text-[#fff] font-bold rounded-xl shadow-lg hover:brightness-110 transition-all flex justify-center items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Initialize Quiz Studio
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/studio')}
+            className="w-full py-4 rounded-xl font-bold text-lg soft-surface soft-surface-hover text-[var(--accent)] transition-all"
+          >
+            Generate Assessment
+          </button>
+        )}
       </div>
     </div>
   );

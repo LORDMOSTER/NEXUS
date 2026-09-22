@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Lenis from '@studio-freight/lenis';
 import Login from './Login';
 import useAuthStore from './store/useAuthStore';
+import { Toaster } from 'sonner';
 
 import Dashboard from './Dashboard';
 import Studio from './Studio';
@@ -36,6 +37,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="bottom-right" richColors />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route 

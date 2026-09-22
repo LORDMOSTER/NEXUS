@@ -21,6 +21,12 @@ const subjectSchema = new mongoose.Schema({
     type: String,
     default: '2021'
   },
+  syllabus: [{
+    unitNumber: Number,
+    title: String,
+    text: String,
+    ocrText: String
+  }],
   createdAt: {
     type: Date,
     default: Date.now

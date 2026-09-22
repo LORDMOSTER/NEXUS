@@ -18,17 +18,20 @@ const seedUsers = async () => {
       {
         structuredId: '7321CSE001',
         passcode: 'Auth@CSE01',
-        role: 'Faculty'
+        role: 'Faculty',
+        name: 'Dr. A. Chandrasekar'
       },
       {
         structuredId: '7321CSE002',
         passcode: 'Auth@CSE02',
-        role: 'Faculty'
+        role: 'Faculty',
+        name: 'Prof. Ramesh Kumar'
       },
       {
         structuredId: '7321CSE003',
         passcode: 'Auth@CSE03',
-        role: 'Faculty'
+        role: 'Faculty',
+        name: 'Dr. S. Anita'
       }
     ];
 
@@ -38,7 +41,8 @@ const seedUsers = async () => {
         return {
           structuredId: teacher.structuredId,
           passwordHash,
-          role: teacher.role
+          role: teacher.role,
+          name: teacher.name
         };
       })
     );

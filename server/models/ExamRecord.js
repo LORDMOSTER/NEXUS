@@ -22,6 +22,10 @@ const examRecordSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  unitsIncluded: {
+    type: [Number],
+    default: []
+  },
   htmlContent: {
     type: String,
     required: true

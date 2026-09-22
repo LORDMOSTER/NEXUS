@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  name: {
+    type: String,
+    default: ''
+  },
   role: {
     type: String,
     default: 'Faculty'

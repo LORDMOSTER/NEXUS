@@ -9,6 +9,8 @@ const autoSeed = require('./autoSeed');
 const User = require('./models/User');
 const logger = require('./logger');
 const examRoutes = require('./routes/examRoutes');
+const requireAuth = require('./middleware/requireAuth');
+const { initNeo4j, closeNeo4j } = require('./neo4j');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,8 +24,9 @@ app.use(express.json());
 morgan.token('body', (req) => JSON.stringify(req.body));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body', { stream: logger.stream }));
 
-// Connect to MongoDB
+// Connect to MongoDB and Neo4j
 connectDB().then(() => {
+  initNeo4j();
   autoSeed();
 });
 
@@ -64,6 +67,7 @@ app.post('/api/auth/login', async (req, res) => {
       id: user._id, 
       structuredId: user.structuredId, 
       role: user.role,
+      name: user.name,
       tenantId,
       departmentCode
     };
@@ -77,8 +81,10 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       token,
       user: {
+        id: user._id,
         structuredId: user.structuredId,
         role: user.role,
+        name: user.name,
         tenantId,
         departmentCode
       }
@@ -90,6 +96,65 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Update Profile Route
+app.put('/api/auth/profile', requireAuth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.name = name;
+    await user.save();
+
+    // Sync profile update to Neo4j
+    try {
+      const { getNeo4jSession } = require('./neo4j');
+      const session = getNeo4jSession();
+      await session.run(`
+        MATCH (u:User {structuredId: $structuredId})
+        SET u.name = $name
+      `, { structuredId: user.structuredId, name: user.name });
+      await session.close();
+    } catch (neoErr) {
+      console.error("Neo4j Profile Sync Error:", neoErr);
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        structuredId: user.structuredId,
+        role: user.role,
+        name: user.name,
+        tenantId: req.user.tenantId,
+        departmentCode: req.user.departmentCode
+      }
+    });
+  } catch (error) {
+    logger.error('Profile update error:', error);
+    res.status(500).json({ message: 'Server error during profile update' });
+  }
+});
+
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down gracefully...');
+  await closeNeo4j();
+  process.exit(0);
+});
+process.on('SIGTERM', async () => {
+  console.log('Shutting down gracefully...');
+  await closeNeo4j();
+  process.exit(0);
 });
